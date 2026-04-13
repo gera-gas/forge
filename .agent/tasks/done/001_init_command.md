@@ -2,9 +2,10 @@
 
 **Design:** [001_init.md](../../design/001_init.md)  
 **Ticket:** (пусто)  
-**Status:** in_progress  
+**Status:** done  
 **Created:** 2026-04-13  
-**Started:** 2026-04-14
+**Started:** 2026-04-14  
+**Completed:** 2026-04-14
 
 ## Описание
 Создать базовую структуру каталогов `.agent/` и файлы по умолчанию, если они отсутствуют.
