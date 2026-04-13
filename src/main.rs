@@ -37,10 +37,6 @@ enum Commands {
     /// Аналог `git init` — создаёт структуру каталогов и файлы-шаблоны
     Init {
         /// Путь к проекту (по умолчанию: текущая директория)
-        /// 
-        /// Option<String> — это как `nullable` / `None` в Python
-        /// None означает "значения нет", Some(value) — "значение есть"
-        /// В C++ это аналог std::optional<std::string>
         #[arg(short, long)]
         path: Option<String>,
     },
@@ -51,9 +47,6 @@ enum Commands {
     /// concept.md, struct.md, tech_stack.md
     Wrap {
         /// Исходная директория для анализа
-        /// 
-        /// String — это владеющая строка (как std::string в C++)
-        /// default_value = "." означает, что если не задано, будет "."
         #[arg(short, long, default_value = ".")]
         source: String,
         
