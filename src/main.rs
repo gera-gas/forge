@@ -2,6 +2,10 @@
 // Это аналог argparse в Python или getopt в C
 use clap::Parser;
 
+// Подключаем наши модули
+mod cli;       // Модуль с логикой команд
+mod templates; // Модуль с шаблонами файлов
+
 // ============================================================================
 // ГЛАВНАЯ СТРУКТУРА CLI
 // ============================================================================
@@ -33,10 +37,6 @@ enum Commands {
     /// Аналог `git init` — создаёт структуру каталогов и файлы-шаблоны
     Init {
         /// Путь к проекту (по умолчанию: текущая директория)
-        /// 
-        /// Option<String> — это как `nullable` / `None` в Python
-        /// None означает "значения нет", Some(value) — "значение есть"
-        /// В C++ это аналог std::optional<std::string>
         #[arg(short, long)]
         path: Option<String>,
     },
@@ -47,9 +47,6 @@ enum Commands {
     /// concept.md, struct.md, tech_stack.md
     Wrap {
         /// Исходная директория для анализа
-        /// 
-        /// String — это владеющая строка (как std::string в C++)
-        /// default_value = "." означает, что если не задано, будет "."
         #[arg(short, long, default_value = ".")]
         source: String,
         
@@ -170,11 +167,10 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         // Когда пользователь ввёл: forge init [--path /some/path]
         Commands::Init { path } => {
-            println!("Инициализация структуры .agent/...");
-            // TODO: Реализовать логику init
-            // Здесь будем создавать каталоги и файлы
-            // path — это Option<String>, можно проверить:
-            // if let Some(p) = path { ... } else { ... }
+            // Вызываем функцию из модуля cli::init
+            // ? оператор означает: если результат Err, вернуть ошибку из main
+            // Это аналог try/except но более явный
+            cli::init::execute(path)?;
         }
         
         // Когда пользователь ввёл: forge wrap --source ./src --model gpt-4o
