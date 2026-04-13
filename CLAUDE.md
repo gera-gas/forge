@@ -1,0 +1,1 @@
+Read `.agent/README.md` first for project context and configuration.
