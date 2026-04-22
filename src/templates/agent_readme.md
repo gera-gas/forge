@@ -25,11 +25,19 @@
 ├── specs/ # Утверждённые технические задания на фичи
 │   └── feature_xyz.md
 │
-├── tasks/         # Kanban-доска задач
-│   ├── backlog/     # Отложенные / ожидают дизайна или уточнения
-│   ├── todo/        # Готовы к работе (приоритизированы)
-│   ├── in_progress/ # Взято в работу (не более 1-2 задач)
-│   └── done/        # Завершённые задачи (история)
+├── kanban/         # Kanban-доска задач
+│   ├── 0_backlog/      # Отложенные задачи
+│   ├── 1_sketch/       # Идеи, user stories, наброски
+│   ├── 2_design/       # Утверждённый дизайн, ТЗ
+│   ├── 3_todo/         # Технически проработанные задачи, готовые к коду
+│   ├── 4_in_progress/  # В работе (не более одной)
+│   └── 5_done/         # Завершённые задачи
+│
+├── tasks/         # ⚠️ DEPRECATED — используйте kanban/
+│   ├── backlog/     # (устарело)
+│   ├── todo/        # (устарело)
+│   ├── in_progress/ # (устарело)
+│   └── done/        # (устарело)
 │
 └── glossary.md # Термины проекта – опционально
 ```
@@ -41,7 +49,35 @@
 - **`rules.md`** – принципы (DRY, KISS, SOLID), требования к тестам, code style.
 - **`workflows/agent.md`** – как агенту читать файлы и выполнять задачи.
 - **`workflows/git.md`** – минимальные правила коммитов и PR.
-- **`tasks/backlog/`**, **`tasks/todo/`**, **`tasks/in_progress/`**, **`tasks/done/`** – пустые папки.
+- **`kanban/0_backlog/`**, **`kanban/1_sketch/`**, **`kanban/2_design/`**, **`kanban/3_todo/`**, **`kanban/4_in_progress/`**, **`kanban/5_done/`** – пустые папки kanban-доски.
+
+## Формат задач kanban
+
+Каждая задача — файл `<id>_<slug>.md` с YAML frontmatter:
+
+```yaml
+---
+id: "001"
+title: "Краткое название"
+type: "feature"       # feature | fix | spike | chore
+priority: "medium"    # low | medium | high | critical
+design: "001"         # ID дизайна в 2_design/ (для задач в 3_todo+)
+blocked_by: null      # ID задачи-блокера или null
+tags: []
+completed_at: null    # YYYY-MM-DD (автоматически при move в done)
+---
+```
+
+**Стадия определяется расположением файла**, не дублируется в frontmatter.
+
+**Правило:** задачи в `3_todo/` и далее должны иметь `design` — ID утверждённого дизайна в `2_design/`.
+
+### CLI-команды
+
+- `forge task new "Название" --design 001` — создать задачу с привязкой к дизайну
+- `forge task move <id> <stage>` — переместить задачу (completed_at при done)
+- `forge task list --design 001` — задачи конкретного дизайна
+- `forge task show <id>` — детали задачи
 
 ## Порядок чтения агентом (перед началом работы)
 
@@ -51,7 +87,7 @@
 4. **`rules.md`** – узнать стандарты кода.
 5. **`struct.md`** (если есть) – понять модули.
 6. **`workflows/agent.md`** – как работать с задачами.
-7. **Текущая задача** из `tasks/in_progress/` (или первая из `tasks/todo/`).
+7. **Текущая задача** из `kanban/4_in_progress/` (или первая из `kanban/3_todo/`).
 
 Остальные файлы (`arch.md`, `workflows/git.md`, `specs/`, `design/`) загружаются **по необходимости** (например, `git.md` – только перед коммитом).
 

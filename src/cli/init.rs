@@ -79,7 +79,32 @@ fn create_directories(agent_dir: &Path) -> Result<()> {
     fs::create_dir_all(agent_dir.join("workflows"))
         .context("Не удалось создать .agent/workflows/")?;
     
-    // Создаём все папки для задач (Kanban)
+    // Создаём структуру kanban (новый формат)
+    fs::create_dir_all(agent_dir.join("kanban/0_backlog"))
+        .context("Не удалось создать .agent/kanban/0_backlog/")?;
+    
+    fs::create_dir_all(agent_dir.join("kanban/1_sketch"))
+        .context("Не удалось создать .agent/kanban/1_sketch/")?;
+    
+    fs::create_dir_all(agent_dir.join("kanban/2_design"))
+        .context("Не удалось создать .agent/kanban/2_design/")?;
+    
+    fs::create_dir_all(agent_dir.join("kanban/3_todo"))
+        .context("Не удалось создать .agent/kanban/3_todo/")?;
+    
+    fs::create_dir_all(agent_dir.join("kanban/4_in_progress"))
+        .context("Не удалось создать .agent/kanban/4_in_progress/")?;
+    
+    fs::create_dir_all(agent_dir.join("kanban/5_done"))
+        .context("Не удалось создать .agent/kanban/5_done/")?;
+    
+    // Создаём .gitkeep в каждой пустой папке kanban
+    for stage in &["0_backlog", "1_sketch", "2_design", "3_todo", "4_in_progress", "5_done"] {
+        let gitkeep = agent_dir.join("kanban").join(stage).join(".gitkeep");
+        write_file(&gitkeep, "")?;
+    }
+
+    // Создаём старую структуру tasks/ (deprecated, для совместимости)
     fs::create_dir_all(agent_dir.join("tasks/backlog"))
         .context("Не удалось создать .agent/tasks/backlog/")?;
     

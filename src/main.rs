@@ -1,10 +1,15 @@
 // Подключаем библиотеку clap для парсинга аргументов командной строки
-// Это аналог argparse в Python или getopt в C
 use clap::Parser;
 
 // Подключаем наши модули
 mod cli;       // Модуль с логикой команд
 mod templates; // Модуль с шаблонами файлов
+mod kanban;    // Модуль для работы с kanban-доской
+
+// Подключаем типы из kanban-модуля
+use kanban::frontmatter::{Priority, TaskFrontmatter, TaskType};
+use kanban::slug;
+use kanban::stage::Stage;
 
 // ============================================================================
 // ГЛАВНАЯ СТРУКТУРА CLI
@@ -57,7 +62,7 @@ enum Commands {
     
     /// Управление задачами (Kanban)
     /// 
-    /// Подкоманды: add, list, start, done
+    /// Подкоманды: new, move, list, show
     Task {
         // Вложенная подкоманда (как в git: git commit, git push)
         #[command(subcommand)]
@@ -83,41 +88,111 @@ enum Commands {
 }
 
 // ============================================================================
+// ТИПЫ ДЛЯ KANBAN
+// ============================================================================
+
+/// Стадии Kanban-доски
+#[derive(Debug, Clone, clap::ValueEnum)]
+enum StageArg {
+    Backlog,
+    Sketch,
+    Design,
+    Todo,
+    InProgress,
+    Done,
+}
+
+/// Типы задач
+#[derive(Debug, Clone, clap::ValueEnum)]
+enum TaskTypeArg {
+    Feature,
+    Fix,
+    Spike,
+    Chore,
+}
+
+/// Приоритеты задач
+#[derive(Debug, Clone, clap::ValueEnum)]
+enum PriorityArg {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
+
+// ============================================================================
 // ПОДКОМАНДЫ ДЛЯ TASK
 // ============================================================================
 
 #[derive(clap::Subcommand)]
 enum TaskCommands {
-    /// Добавить задачу в tasks/todo/
-    /// 
-    /// Пример: forge task add "Реализовать тесты"
-    Add {
-        /// Описание задачи
-        description: String,
+    /// Создать новую задачу в kanban-доске
+    ///
+    /// Пример: forge task new "Kanban board CLI"
+    /// Пример: forge task new "Bug fix" --stage todo --type fix --priority high --design 001
+    New {
+        /// Название задачи
+        title: String,
+
+        /// Стадия (по умолчанию: sketch)
+        #[arg(short, long, value_enum, default_value = "sketch")]
+        stage: StageArg,
+
+        /// Тип задачи
+        #[arg(short = 't', long, value_enum, default_value = "feature")]
+        r#type: TaskTypeArg,
+
+        /// Приоритет
+        #[arg(short, long, value_enum, default_value = "medium")]
+        priority: PriorityArg,
+
+        /// ID дизайна, из которого порождена задача
+        #[arg(long)]
+        design: Option<String>,
+
+        /// Теги (через запятую)
+        #[arg(long, default_value = "")]
+        tags: String,
     },
-    
-    /// Список всех задач (todo, in_progress, done)
-    /// 
+
+    /// Переместить задачу между стадиями kanban-доски
+    ///
+    /// Пример: forge task move 001 design
+    /// Пример: forge task move 003 done
+    Move {
+        /// ID задачи
+        id: String,
+
+        /// Целевая стадия
+        stage: StageArg,
+    },
+
+    /// Список задач в kanban-доске
+    ///
     /// Пример: forge task list
-    /// Пример: forge task list --format json
+    /// Пример: forge task list --stage todo --format json --design 001
     List {
+        /// Фильтр по стадии (все стадии, если не указано)
+        #[arg(short, long, value_enum)]
+        stage: Option<StageArg>,
+
         /// Формат вывода: table (по умолчанию) или json
         #[arg(long, default_value = "table")]
         format: String,
+
+        /// Фильтр по типу задачи
+        #[arg(short = 't', long, value_enum)]
+        r#type: Option<TaskTypeArg>,
+
+        /// Фильтр по ID дизайна
+        #[arg(long)]
+        design: Option<String>,
     },
-    
-    /// Начать задачу (переместить из todo в in_progress)
-    /// 
-    /// Пример: forge task start 001
-    Start {
-        /// ID задачи (имя файла без .md, например 001)
-        id: String,
-    },
-    
-    /// Завершить задачу (переместить из in_progress в done)
-    /// 
-    /// Пример: forge task done 001
-    Done {
+
+    /// Показать детали задачи
+    ///
+    /// Пример: forge task show 001
+    Show {
         /// ID задачи
         id: String,
     },
@@ -185,36 +260,293 @@ async fn main() -> anyhow::Result<()> {
         
         // Когда пользователь ввёл: forge task <subcommand>
         Commands::Task { command } => {
-            // Вложенный match для подкоманд
+            // Вложенный match для подкоманд kanban
             match command {
-                TaskCommands::Add { description } => {
-                    println!("Добавление задачи: {}", description);
-                    // TODO: Реализовать add
-                    // 1. Найти следующий номер (например, 006)
-                    // 2. Создать файл tasks/todo/006_<sanitized_description>.md
+                TaskCommands::New { title, stage, r#type, priority, design, tags } => {
+                    // Конвертируем CLI-enum в kanban-enum
+                    let kanban_stage = match stage {
+                        StageArg::Backlog => Stage::Backlog,
+                        StageArg::Sketch => Stage::Sketch,
+                        StageArg::Design => Stage::Design,
+                        StageArg::Todo => Stage::Todo,
+                        StageArg::InProgress => Stage::InProgress,
+                        StageArg::Done => Stage::Done,
+                    };
+                    let kanban_type = match r#type {
+                        TaskTypeArg::Feature => TaskType::Feature,
+                        TaskTypeArg::Fix => TaskType::Fix,
+                        TaskTypeArg::Spike => TaskType::Spike,
+                        TaskTypeArg::Chore => TaskType::Chore,
+                    };
+                    let kanban_priority = match priority {
+                        PriorityArg::Low => Priority::Low,
+                        PriorityArg::Medium => Priority::Medium,
+                        PriorityArg::High => Priority::High,
+                        PriorityArg::Critical => Priority::Critical,
+                    };
+                    let tags_vec: Vec<String> = if tags.is_empty() {
+                        Vec::new()
+                    } else {
+                        tags.split(',').map(|s| s.trim().to_string()).collect()
+                    };
+
+                    // Ищем корень kanban-доски
+                    let kanban_root = match kanban::find_kanban_root() {
+                        Some(root) => root,
+                        None => {
+                            eprintln!("Ошибка: не найдена директория .agent/kanban/");
+                            eprintln!("Запустите 'forge init' для создания структуры.");
+                            std::process::exit(1);
+                        }
+                    };
+
+                    // Определяем следующий доступный ID
+                    let next_id = kanban::next_available_id(&kanban_root);
+
+                    // Генерируем slug из названия
+                    let task_slug = slug::generate_slug(&title);
+
+                    // Создаём frontmatter
+                    let fm = TaskFrontmatter {
+                        id: next_id.clone(),
+                        title: title.clone(),
+                        task_type: kanban_type,
+                        priority: kanban_priority,
+                        design: design,
+                        blocked_by: None,
+                        tags: tags_vec,
+                        completed_at: None,
+                    };
+
+                    // Создаём файл задачи
+                    match kanban::create_task_file(&kanban_root, &kanban_stage, &fm, &task_slug) {
+                        Ok(path) => {
+                            println!("Created: {}", path.display());
+                            println!("Git:     task({}): add {} \"{}\"", fm.id, kanban_stage, fm.title);
+                        }
+                        Err(e) => {
+                            eprintln!("Ошибка при создании задачи: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
                 }
-                
-                TaskCommands::List { format } => {
-                    println!("Список задач (формат: {})", format);
-                    // TODO: Реализовать list
-                    // 1. Прочитать tasks/todo/, tasks/in_progress/, tasks/done/
-                    // 2. Вывести в таблице или JSON
+
+                TaskCommands::Move { id, stage } => {
+                    let target_stage = match stage {
+                        StageArg::Backlog => Stage::Backlog,
+                        StageArg::Sketch => Stage::Sketch,
+                        StageArg::Design => Stage::Design,
+                        StageArg::Todo => Stage::Todo,
+                        StageArg::InProgress => Stage::InProgress,
+                        StageArg::Done => Stage::Done,
+                    };
+
+                    // Ищем корень kanban-доски
+                    let kanban_root = match kanban::find_kanban_root() {
+                        Some(root) => root,
+                        None => {
+                            eprintln!("Ошибка: не найдена директория .agent/kanban/");
+                            eprintln!("Запустите 'forge init' для создания структуры.");
+                            std::process::exit(1);
+                        }
+                    };
+
+                    // Находим задачу по ID
+                    let task = match kanban::find_task_by_id(&kanban_root, &id) {
+                        Some(t) => t,
+                        None => {
+                            eprintln!("Ошибка: задача с ID '{}' не найдена.", id);
+                            std::process::exit(1);
+                        }
+                    };
+
+                    // Проверяем правила перехода
+                    if !task.stage.can_move_to(&target_stage) {
+                        eprintln!(
+                            "Ошибка: нельзя переместить задачу из '{}' в '{}'.",
+                            task.stage, target_stage
+                        );
+                        std::process::exit(1);
+                    }
+
+                    let source_stage = task.stage;
+
+                    // При перемещении в done — записываем completed_at
+                    if target_stage == Stage::Done {
+                        if let Err(e) = kanban::set_completed_at(&task) {
+                            eprintln!("Предупреждение: не удалось записать completed_at: {}", e);
+                        }
+                    }
+
+                    // Перемещаем задачу
+                    match kanban::move_task(&task, &target_stage, &kanban_root) {
+                        Ok(new_path) => {
+                            println!("Moved:   task({}): move {} -> {}", id, source_stage, target_stage);
+                            println!("From:    {}", task.path.display());
+                            println!("To:      {}", new_path.display());
+                            println!("Git:     task({}): move {} -> {}", id, source_stage, target_stage);
+
+                            // При переходе design -> todo предлагаем создать git-ветку
+                            if source_stage == Stage::Design && target_stage == Stage::Todo {
+                                let slug = slug::generate_slug(task.title());
+                                println!();
+                                println!("💡 Рекомендуется создать git-ветку:");
+                                let task_type_prefix = match task.frontmatter.task_type {
+                                    TaskType::Feature => "feature",
+                                    TaskType::Fix => "fix",
+                                    TaskType::Spike => "spike",
+                                    TaskType::Chore => "chore",
+                                };
+                                println!("   git checkout -b {}/{}_{}", task_type_prefix, id, slug);
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Ошибка при перемещении задачи: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
                 }
-                
-                TaskCommands::Start { id } => {
-                    println!("Начало задачи: {}", id);
-                    // TODO: Реализовать start
-                    // 1. Найти файл в tasks/todo/ с префиксом id
-                    // 2. Переместить в tasks/in_progress/
-                    // 3. Обновить поле Status в файле
+
+                TaskCommands::List { stage, format, r#type, design } => {
+                    // Ищем корень kanban-доски
+                    let kanban_root = match kanban::find_kanban_root() {
+                        Some(root) => root,
+                        None => {
+                            eprintln!("Ошибка: не найдена директория .agent/kanban/");
+                            eprintln!("Запустите 'forge init' для создания структуры.");
+                            std::process::exit(1);
+                        }
+                    };
+
+                    // Сканируем все задачи
+                    let mut tasks = kanban::scan_all_tasks(&kanban_root);
+
+                    // Фильтруем по стадии
+                    if let Some(ref stage_arg) = stage {
+                        let filter_stage = match stage_arg {
+                            StageArg::Backlog => Stage::Backlog,
+                            StageArg::Sketch => Stage::Sketch,
+                            StageArg::Design => Stage::Design,
+                            StageArg::Todo => Stage::Todo,
+                            StageArg::InProgress => Stage::InProgress,
+                            StageArg::Done => Stage::Done,
+                        };
+                        tasks.retain(|t| t.stage == filter_stage);
+                    }
+
+                    // Фильтруем по типу
+                    if let Some(ref type_arg) = r#type {
+                        let filter_type = match type_arg {
+                            TaskTypeArg::Feature => TaskType::Feature,
+                            TaskTypeArg::Fix => TaskType::Fix,
+                            TaskTypeArg::Spike => TaskType::Spike,
+                            TaskTypeArg::Chore => TaskType::Chore,
+                        };
+                        tasks.retain(|t| t.frontmatter.task_type == filter_type);
+                    }
+
+                    // Фильтруем по дизайну
+                    if let Some(ref design_id) = design {
+                        tasks.retain(|t| t.frontmatter.design.as_ref() == Some(design_id));
+                    }
+
+                    // Сортируем по ID
+                    tasks.sort_by_key(|t| t.frontmatter.id.clone());
+
+                    if tasks.is_empty() {
+                        println!("Задач не найдено.");
+                        return Ok(());
+                    }
+
+                    // Выводим в нужном формате
+                    if format == "json" {
+                        // JSON формат
+                        println!("[");
+                        for (i, task) in tasks.iter().enumerate() {
+                            let comma = if i < tasks.len() - 1 { "," } else { "" };
+                            let design_json = task.frontmatter.design.as_ref()
+                                .map(|s| format!("\"{}\"", s))
+                                .unwrap_or("null".to_string());
+                            let completed_json = task.frontmatter.completed_at.as_ref()
+                                .map(|s| format!("\"{}\"", s))
+                                .unwrap_or("null".to_string());
+                            println!(
+                                "  {{\"id\": \"{}\", \"title\": \"{}\", \"stage\": \"{}\", \"type\": \"{}\", \"priority\": \"{}\", \"design\": {}, \"blocked_by\": {}, \"completed_at\": {}, \"path\": \"{}\"}}{}",
+                                task.frontmatter.id,
+                                task.frontmatter.title,
+                                task.stage,
+                                task.frontmatter.task_type,
+                                task.frontmatter.priority,
+                                design_json,
+                                task.frontmatter.blocked_by.as_ref().map(|s| format!("\"{}\"", s)).unwrap_or("null".to_string()),
+                                completed_json,
+                                task.path.display(),
+                                comma
+                            );
+                        }
+                        println!("]");
+                    } else {
+                        // Table формат
+                        println!("{:<5} {:<30} {:<12} {:<10} {:<10}", "ID", "TITLE", "STAGE", "TYPE", "PRIORITY");
+                        println!("{}", "-".repeat(67));
+                        for task in &tasks {
+                            let title = if task.frontmatter.title.len() > 28 {
+                                format!("{}...", &task.frontmatter.title[..25])
+                            } else {
+                                task.frontmatter.title.clone()
+                            };
+                            println!(
+                                "{:<5} {:<30} {:<12} {:<10} {:<10}",
+                                task.frontmatter.id,
+                                title,
+                                task.stage,
+                                task.frontmatter.task_type,
+                                task.frontmatter.priority
+                            );
+                        }
+                    }
                 }
-                
-                TaskCommands::Done { id } => {
-                    println!("Завершение задачи: {}", id);
-                    // TODO: Реализовать done
-                    // 1. Найти файл в tasks/in_progress/ с префиксом id
-                    // 2. Переместить в tasks/done/
-                    // 3. Обновить поле Status и дату завершения
+
+                TaskCommands::Show { id } => {
+                    // Ищем корень kanban-доски
+                    let kanban_root = match kanban::find_kanban_root() {
+                        Some(root) => root,
+                        None => {
+                            eprintln!("Ошибка: не найдена директория .agent/kanban/");
+                            eprintln!("Запустите 'forge init' для создания структуры.");
+                            std::process::exit(1);
+                        }
+                    };
+
+                    // Находим задачу по ID
+                    let task = match kanban::find_task_by_id(&kanban_root, &id) {
+                        Some(t) => t,
+                        None => {
+                            eprintln!("Ошибка: задача с ID '{}' не найдена.", id);
+                            std::process::exit(1);
+                        }
+                    };
+
+                    // Выводим информацию о задаче
+                    println!("ID:       {}", task.frontmatter.id);
+                    println!("Title:    {}", task.frontmatter.title);
+                    println!("Stage:    {}", task.stage);
+                    println!("Type:     {}", task.frontmatter.task_type);
+                    println!("Priority: {}", task.frontmatter.priority);
+                    if let Some(ref design) = task.frontmatter.design {
+                        println!("Design:   {}", design);
+                    }
+                    if let Some(ref blocked) = task.frontmatter.blocked_by {
+                        println!("Blocked:  {}", blocked);
+                    }
+                    if !task.frontmatter.tags.is_empty() {
+                        println!("Tags:     {}", task.frontmatter.tags.join(", "));
+                    }
+                    if let Some(ref completed) = task.frontmatter.completed_at {
+                        println!("Done:     {}", completed);
+                    }
+                    println!("Path:     {}", task.path.display());
+                    println!("Folder:   {}", if task.is_folder { "да" } else { "нет" });
                 }
             }
         }

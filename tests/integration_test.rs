@@ -55,6 +55,18 @@ fn test_init_creates_structure() {
     
     let tasks_backlog = agent_dir.join("tasks").join("backlog");
     assert!(tasks_backlog.exists(), ".agent/tasks/backlog/ should exist");
+
+    // Проверяем структуру kanban
+    let kanban_dir = agent_dir.join("kanban");
+    assert!(kanban_dir.exists(), ".agent/kanban/ should exist");
+
+    let kanban_stages = ["0_backlog", "1_sketch", "2_design", "3_todo", "4_in_progress", "5_done"];
+    for stage in &kanban_stages {
+        let stage_dir = kanban_dir.join(stage);
+        assert!(stage_dir.exists(), ".agent/kanban/{}/ should exist", stage);
+        let gitkeep = stage_dir.join(".gitkeep");
+        assert!(gitkeep.exists(), ".agent/kanban/{}/.gitkeep should exist", stage);
+    }
 }
 
 /// Тест: Повторный `forge init` не перезатирает существующие файлы
