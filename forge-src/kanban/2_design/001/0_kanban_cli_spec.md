@@ -15,14 +15,14 @@ tags: ["cli", "kanban", "core"]
 
 ## Решение
 
-Kanban-доска с 6 стадиями, реализованная через файловую систему в `.agent/kanban/`. CLI-команды управляют перемещением задач между стадиями.
+Kanban-доска с 6 стадиями, реализованная через файловую систему в `forge/kanban/`. CLI-команды управляют перемещением задач между стадиями.
 
 ---
 
 ## Структура Kanban
 
 ```
-.agent/kanban/
+forge/kanban/
 ├── 0_backlog/      # Отложенные задачи
 ├── 1_sketch/       # Идеи, user stories, наброски
 ├── 2_design/       # Утверждённый дизайн, ТЗ
@@ -137,7 +137,7 @@ ID    TITLE                    STAGE        TYPE      PRIORITY
     "type": "feature",
     "priority": "high",
     "blocked_by": null,
-    "path": ".agent/kanban/2_design/001/"
+    "path": "forge/kanban/2_design/001/"
   }
 ]
 ```
@@ -186,7 +186,7 @@ forge task show <id>
 Команда `forge init` должна создавать структуру kanban:
 
 ```
-.agent/kanban/
+forge/kanban/
 ├── 0_backlog/
 ├── 1_sketch/
 ├── 2_design/
@@ -195,7 +195,7 @@ forge task show <id>
 └── 5_done/
 ```
 
-И обновлять `.agent/README.md` с правилами kanban.
+И обновлять `forge/README.md` с правилами kanban.
 
 ---
 

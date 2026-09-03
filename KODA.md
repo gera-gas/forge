@@ -1,1 +1,1 @@
-Read `.agent/README.md` first for project context and configuration.
+Read `forge-src/README.md` first for project context and configuration.

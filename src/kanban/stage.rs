@@ -1,7 +1,7 @@
 //! Модуль для работы со стадиями Kanban-доски
 //!
 //! Стадии: backlog, sketch, design, todo, in_progress, done
-//! Каждая стадия соответствует папке в .agent/kanban/
+//! Каждая стадия соответствует папке в forge-src/kanban/
 
 use std::fmt;
 use std::str::FromStr;

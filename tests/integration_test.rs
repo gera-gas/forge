@@ -41,31 +41,28 @@ fn test_init_creates_structure() {
     assert!(output.status.success(), "forge init should succeed");
 
     // Проверяем что создались основные файлы и папки
-    let agent_dir = temp_dir.path().join(".agent");
-    assert!(agent_dir.exists(), ".agent/ directory should exist");
+    let forge_dir = temp_dir.path().join("forge-src");
+    assert!(forge_dir.exists(), "forge-src/ directory should exist");
     
-    let readme = agent_dir.join("README.md");
-    assert!(readme.exists(), ".agent/README.md should exist");
+    let readme = forge_dir.join("README.md");
+    assert!(readme.exists(), "forge-src/README.md should exist");
     
-    let concept = agent_dir.join("concept.md");
-    assert!(concept.exists(), ".agent/concept.md should exist");
+    let concept = forge_dir.join("concept.md");
+    assert!(concept.exists(), "forge-src/concept.md should exist");
     
-    let tasks_todo = agent_dir.join("tasks").join("todo");
-    assert!(tasks_todo.exists(), ".agent/tasks/todo/ should exist");
-    
-    let tasks_backlog = agent_dir.join("tasks").join("backlog");
-    assert!(tasks_backlog.exists(), ".agent/tasks/backlog/ should exist");
+    let codegen = forge_dir.join("codegen.md");
+    assert!(codegen.exists(), "forge-src/codegen.md should exist");
 
     // Проверяем структуру kanban
-    let kanban_dir = agent_dir.join("kanban");
-    assert!(kanban_dir.exists(), ".agent/kanban/ should exist");
+    let kanban_dir = forge_dir.join("kanban");
+    assert!(kanban_dir.exists(), "forge-src/kanban/ should exist");
 
     let kanban_stages = ["0_backlog", "1_sketch", "2_design", "3_todo", "4_in_progress", "5_done"];
     for stage in &kanban_stages {
         let stage_dir = kanban_dir.join(stage);
-        assert!(stage_dir.exists(), ".agent/kanban/{}/ should exist", stage);
+        assert!(stage_dir.exists(), "forge-src/kanban/{}/ should exist", stage);
         let gitkeep = stage_dir.join(".gitkeep");
-        assert!(gitkeep.exists(), ".agent/kanban/{}/.gitkeep should exist", stage);
+        assert!(gitkeep.exists(), "forge-src/kanban/{}/.gitkeep should exist", stage);
     }
 }
 
@@ -105,7 +102,7 @@ fn test_init_creates_non_empty_readme() {
         .output()
         .expect("Failed to execute forge init");
 
-    let readme = temp_dir.path().join(".agent").join("README.md");
+    let readme = temp_dir.path().join("forge-src").join("README.md");
     let content = std::fs::read_to_string(readme).expect("Failed to read README.md");
     
     // Проверяем что файл не пустой и содержит ключевые слова

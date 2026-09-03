@@ -1,6 +1,6 @@
 // Модуль для команды `forge init`
 // 
-// Этот модуль отвечает за создание структуры .agent/ в проекте
+// Этот модуль отвечает за создание структуры forge-src/ в проекте
 
 use anyhow::{Context, Result};
 use std::fs;
@@ -27,11 +27,11 @@ pub fn execute(path: Option<String>) -> Result<()> {
     // Path::new() создаёт путь (кросс-платформенно, в отличие от строк)
     let base_dir = Path::new(path.as_deref().unwrap_or("."));
     
-    // .agent/ будет создаваться внутри base_dir
-    let agent_dir = base_dir.join(".agent");
+    // forge-src/ будет создаваться внутри base_dir
+    let forge_dir = base_dir.join("forge-src");
 
-    // Проверяем существует ли .agent/
-    if agent_dir.exists() {
+    // Проверяем существует ли forge-src/
+    if forge_dir.exists() {
         // Спрашиваем пользователя что делать
         if !confirm_overwrite()? {
             println!("Отменено пользователем.");
@@ -40,16 +40,16 @@ pub fn execute(path: Option<String>) -> Result<()> {
     }
 
     // Создаём структуру директорий
-    create_directories(&agent_dir)?;
+    create_directories(&forge_dir)?;
     
     // Создаём файлы с шаблонами
-    create_files(&agent_dir)?;
+    create_files(&forge_dir)?;
     
     // Создаём файлы-указатели в корне проекта
     create_pointer_files(base_dir)?;
 
-    println!("✅ Структура .agent/ успешно создана в {:?}", base_dir);
-    println!("📖 Начните с редактирования .agent/concept.md");
+    println!("✅ Структура forge-src/ успешно создана в {:?}", base_dir);
+    println!("📖 Начните с редактирования forge-src/concept.md");
     
     Ok(())
 }
@@ -58,64 +58,51 @@ pub fn execute(path: Option<String>) -> Result<()> {
 // СОЗДАНИЕ ДИРЕКТОРИЙ
 // ============================================================================
 
-/// Создаёт все необходимые директории для .agent/
+/// Создаёт все необходимые директории для forge-src/
 /// 
 /// # Аргументы
-/// * `agent_dir` - Путь к .agent/
-fn create_directories(agent_dir: &Path) -> Result<()> {
+/// * `forge_dir` - Путь к forge-src/
+fn create_directories(forge_dir: &Path) -> Result<()> {
     // fs::create_dir_all() - рекурсивно создаёт все папки в пути
     // Это аналог `mkdir -p` в Unix или `mkdir` с ключом в Windows
     // Если папка уже существует — не ошибка (idempotent)
     
-    fs::create_dir_all(agent_dir)
-        .context("Не удалось создать .agent/")?;
+    fs::create_dir_all(forge_dir)
+        .context("Не удалось создать forge-src/")?;
     
-    fs::create_dir_all(agent_dir.join("design"))
-        .context("Не удалось создать .agent/design/")?;
+    fs::create_dir_all(forge_dir.join("design"))
+        .context("Не удалось создать forge-src/design/")?;
     
-    fs::create_dir_all(agent_dir.join("specs"))
-        .context("Не удалось создать .agent/specs/")?;
+    fs::create_dir_all(forge_dir.join("specs"))
+        .context("Не удалось создать forge-src/specs/")?;
     
-    fs::create_dir_all(agent_dir.join("workflows"))
-        .context("Не удалось создать .agent/workflows/")?;
+    fs::create_dir_all(forge_dir.join("workflows"))
+        .context("Не удалось создать forge-src/workflows/")?;
     
     // Создаём структуру kanban (новый формат)
-    fs::create_dir_all(agent_dir.join("kanban/0_backlog"))
-        .context("Не удалось создать .agent/kanban/0_backlog/")?;
+    fs::create_dir_all(forge_dir.join("kanban/0_backlog"))
+        .context("Не удалось создать forge-src/kanban/0_backlog/")?;
     
-    fs::create_dir_all(agent_dir.join("kanban/1_sketch"))
-        .context("Не удалось создать .agent/kanban/1_sketch/")?;
+    fs::create_dir_all(forge_dir.join("kanban/1_sketch"))
+        .context("Не удалось создать forge-src/kanban/1_sketch/")?;
     
-    fs::create_dir_all(agent_dir.join("kanban/2_design"))
-        .context("Не удалось создать .agent/kanban/2_design/")?;
+    fs::create_dir_all(forge_dir.join("kanban/2_design"))
+        .context("Не удалось создать forge-src/kanban/2_design/")?;
     
-    fs::create_dir_all(agent_dir.join("kanban/3_todo"))
-        .context("Не удалось создать .agent/kanban/3_todo/")?;
+    fs::create_dir_all(forge_dir.join("kanban/3_todo"))
+        .context("Не удалось создать forge-src/kanban/3_todo/")?;
     
-    fs::create_dir_all(agent_dir.join("kanban/4_in_progress"))
-        .context("Не удалось создать .agent/kanban/4_in_progress/")?;
+    fs::create_dir_all(forge_dir.join("kanban/4_in_progress"))
+        .context("Не удалось создать forge-src/kanban/4_in_progress/")?;
     
-    fs::create_dir_all(agent_dir.join("kanban/5_done"))
-        .context("Не удалось создать .agent/kanban/5_done/")?;
+    fs::create_dir_all(forge_dir.join("kanban/5_done"))
+        .context("Не удалось создать forge-src/kanban/5_done/")?;
     
     // Создаём .gitkeep в каждой пустой папке kanban
     for stage in &["0_backlog", "1_sketch", "2_design", "3_todo", "4_in_progress", "5_done"] {
-        let gitkeep = agent_dir.join("kanban").join(stage).join(".gitkeep");
+        let gitkeep = forge_dir.join("kanban").join(stage).join(".gitkeep");
         write_file(&gitkeep, "")?;
     }
-
-    // Создаём старую структуру tasks/ (deprecated, для совместимости)
-    fs::create_dir_all(agent_dir.join("tasks/backlog"))
-        .context("Не удалось создать .agent/tasks/backlog/")?;
-    
-    fs::create_dir_all(agent_dir.join("tasks/todo"))
-        .context("Не удалось создать .agent/tasks/todo/")?;
-    
-    fs::create_dir_all(agent_dir.join("tasks/in_progress"))
-        .context("Не удалось создать .agent/tasks/in_progress/")?;
-    
-    fs::create_dir_all(agent_dir.join("tasks/done"))
-        .context("Не удалось создать .agent/tasks/done/")?;
 
     Ok(())
 }
@@ -124,29 +111,30 @@ fn create_directories(agent_dir: &Path) -> Result<()> {
 // СОЗДАНИЕ ФАЙЛОВ
 // ============================================================================
 
-/// Создаёт основные файлы .agent/ с шаблонами
+/// Создаёт основные файлы forge-src/ с шаблонами
 /// 
 /// # Аргументы
-/// * `agent_dir` - Путь к .agent/
-fn create_files(agent_dir: &Path) -> Result<()> {
+/// * `forge_dir` - Путь к forge-src/
+fn create_files(forge_dir: &Path) -> Result<()> {
     // Записываем каждый файл из шаблонов
     // Функция write_file() определена ниже
     
-    write_file(&agent_dir.join("README.md"), templates::AGENT_README)?;
-    write_file(&agent_dir.join("concept.md"), templates::CONCEPT)?;
-    write_file(&agent_dir.join("tech_stack.md"), templates::TECH_STACK)?;
-    write_file(&agent_dir.join("rules.md"), templates::RULES)?;
-    write_file(&agent_dir.join("struct.md"), templates::STRUCT)?;
+    write_file(&forge_dir.join("README.md"), templates::FORGE_README)?;
+    write_file(&forge_dir.join("concept.md"), templates::CONCEPT)?;
+    write_file(&forge_dir.join("tech_stack.md"), templates::TECH_STACK)?;
+    write_file(&forge_dir.join("rules.md"), templates::RULES)?;
+    write_file(&forge_dir.join("struct.md"), templates::STRUCT)?;
+    write_file(&forge_dir.join("codegen.md"), templates::CODEGEN)?;
     
-    write_file(&agent_dir.join("workflows/agent.md"), templates::WORKFLOW_AGENT)?;
-    write_file(&agent_dir.join("workflows/git.md"), templates::WORKFLOW_GIT)?;
+    write_file(&forge_dir.join("workflows/agent.md"), templates::WORKFLOW_AGENT)?;
+    write_file(&forge_dir.join("workflows/git.md"), templates::WORKFLOW_GIT)?;
 
     Ok(())
 }
 
 /// Создаёт файлы-указатели в корне проекта
 /// 
-/// Эти файлы направляют разные ИИ-агенты в .agent/README.md
+/// Эти файлы направляют разные ИИ-агенты в forge-src/README.md
 /// 
 /// # Аргументы
 /// * `base_dir` - Корневая директория проекта
@@ -160,7 +148,7 @@ fn create_pointer_files(base_dir: &Path) -> Result<()> {
     ];
 
     for filename in pointers {
-        write_file(&base_dir.join(filename), templates::AGENT_POINTER)?;
+        write_file(&base_dir.join(filename), templates::FORGE_POINTER)?;
     }
 
     Ok(())
@@ -188,7 +176,7 @@ fn write_file(path: &Path, content: &str) -> Result<()> {
 /// * `Ok(false)` - если пользователь отказался
 /// * `Err(...)` - если произошла ошибка ввода/вывода
 fn confirm_overwrite() -> Result<bool> {
-    print!("⚠️  Директория .agent/ уже существует. Перезаписать? [y/n]: ");
+    print!("⚠️  Директория forge-src/ уже существует. Перезаписать? [y/n]: ");
     // В Rust нужно явно flush, чтобы текст появился до ввода
     io::stdout().flush()?;
 

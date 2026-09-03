@@ -1,12 +1,15 @@
-// Модуль с шаблонами для генерации файлов .agent/
+// Модуль с шаблонами для генерации файлов forge-src/
 // 
 // В Rust можно встроить текстовые файлы прямо в бинарник с помощью макроса include_str!
 // Но для простоты мы сейчас храним их как константы (строки в коде)
 
-/// Шаблон для .agent/README.md
-pub const AGENT_README: &str = include_str!("agent_readme.md");
+/// Шаблон для forge-src/README.md
+pub const FORGE_README: &str = include_str!("forge_readme.md");
 
-/// Шаблон для .agent/concept.md (пустой, заполняется пользователем)
+/// Шаблон для forge-src/codegen.md (правила генерации кода для ИИ-агента)
+pub const CODEGEN: &str = include_str!("codegen.md");
+
+/// Шаблон для forge-src/concept.md (пустой, заполняется пользователем)
 pub const CONCEPT: &str = r#"# Concept
 
 ## Цели
@@ -18,7 +21,7 @@ pub const CONCEPT: &str = r#"# Concept
 - (опишите ограничения: платформа, зависимости, производительность)
 "#;
 
-/// Шаблон для .agent/tech_stack.md (пустой, заполняется пользователем)
+/// Шаблон для forge-src/tech_stack.md (пустой, заполняется пользователем)
 pub const TECH_STACK: &str = r#"# Технологический стек
 
 - **Язык**: (укажите язык программирования)
@@ -26,7 +29,7 @@ pub const TECH_STACK: &str = r#"# Технологический стек
 - **Зависимости**: (перечислите основные зависимости)
 "#;
 
-/// Шаблон для .agent/rules.md
+/// Шаблон для forge-src/rules.md
 pub const RULES: &str = r#"# Стандарты кодирования
 
 - **DRY** – не дублируй логику.
@@ -37,7 +40,7 @@ pub const RULES: &str = r#"# Стандарты кодирования
 - **Cross-platform** – использовать кросс-платформенные инструменты где это возможно.
 "#;
 
-/// Шаблон для .agent/struct.md (пустой, заполняется по мере роста)
+/// Шаблон для forge-src/struct.md (пустой, заполняется по мере роста)
 pub const STRUCT: &str = r#"# Модульная структура проекта
 
 (опишите модули вашего проекта когда их станет >3)
@@ -49,7 +52,7 @@ src/
 ```
 "#;
 
-/// Шаблон для .agent/workflows/agent.md
+/// Шаблон для forge-src/workflows/agent.md
 pub const WORKFLOW_AGENT: &str = r#"# Рабочий процесс для агента
 
 1. Прочитай `README.md`, `concept.md`, `tech_stack.md`, `rules.md`.
@@ -94,7 +97,7 @@ forge task new "Название задачи" --design 001
 - `forge task show <id>` — детали задачи
 "#;
 
-/// Шаблон для .agent/workflows/git.md
+/// Шаблон для forge-src/workflows/git.md
 pub const WORKFLOW_GIT: &str = r#"# Git-процесс
 
 ## Формат коммитов
@@ -123,4 +126,4 @@ pub const WORKFLOW_GIT: &str = r#"# Git-процесс
 "#;
 
 /// Шаблон для файлов-указателей (CLAUDE.md, AGENTS.md и т.д.)
-pub const AGENT_POINTER: &str = "Read `.agent/README.md` first for project context and configuration.\n";
+pub const FORGE_POINTER: &str = "Read `forge-src/README.md` first for project context and configuration.\n";

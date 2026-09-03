@@ -37,7 +37,7 @@ struct Cli {
 // Это как если бы в C был union + enum вместе, но type-safe
 #[derive(clap::Subcommand)]
 enum Commands {
-    /// Инициализация структуры .agent/ в проекте
+    /// Инициализация структуры forge-src/ в проекте
     /// 
     /// Аналог `git init` — создаёт структуру каталогов и файлы-шаблоны
     Init {
@@ -255,7 +255,7 @@ async fn main() -> anyhow::Result<()> {
             // 1. Сканировать файлы в source
             // 2. Собрать контекст
             // 3. Отправить в LLM API
-            // 4. Сохранить результаты в .agent/
+            // 4. Сохранить результаты в forge-src/
         }
         
         // Когда пользователь ввёл: forge task <subcommand>
@@ -294,7 +294,7 @@ async fn main() -> anyhow::Result<()> {
                     let kanban_root = match kanban::find_kanban_root() {
                         Some(root) => root,
                         None => {
-                            eprintln!("Ошибка: не найдена директория .agent/kanban/");
+                            eprintln!("Ошибка: не найдена директория forge-src/kanban/");
                             eprintln!("Запустите 'forge init' для создания структуры.");
                             std::process::exit(1);
                         }
@@ -345,7 +345,7 @@ async fn main() -> anyhow::Result<()> {
                     let kanban_root = match kanban::find_kanban_root() {
                         Some(root) => root,
                         None => {
-                            eprintln!("Ошибка: не найдена директория .agent/kanban/");
+                            eprintln!("Ошибка: не найдена директория forge-src/kanban/");
                             eprintln!("Запустите 'forge init' для создания структуры.");
                             std::process::exit(1);
                         }
@@ -412,7 +412,7 @@ async fn main() -> anyhow::Result<()> {
                     let kanban_root = match kanban::find_kanban_root() {
                         Some(root) => root,
                         None => {
-                            eprintln!("Ошибка: не найдена директория .agent/kanban/");
+                            eprintln!("Ошибка: не найдена директория forge-src/kanban/");
                             eprintln!("Запустите 'forge init' для создания структуры.");
                             std::process::exit(1);
                         }
@@ -512,7 +512,7 @@ async fn main() -> anyhow::Result<()> {
                     let kanban_root = match kanban::find_kanban_root() {
                         Some(root) => root,
                         None => {
-                            eprintln!("Ошибка: не найдена директория .agent/kanban/");
+                            eprintln!("Ошибка: не найдена директория forge-src/kanban/");
                             eprintln!("Запустите 'forge init' для создания структуры.");
                             std::process::exit(1);
                         }

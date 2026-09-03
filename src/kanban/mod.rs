@@ -21,12 +21,12 @@ use crate::kanban::stage::Stage;
 use crate::kanban::task::Task;
 
 /// Имя корневой директории kanban
-const KANBAN_DIR: &str = ".agent/kanban";
+const KANBAN_DIR: &str = "forge-src/kanban";
 
 /// Ищет корневую директорию kanban от текущей директории вверх по дереву
 ///
 /// # Возвращает
-/// * `Some(PathBuf)` — путь к `.agent/kanban/`
+/// * `Some(PathBuf)` — путь к `forge-src/kanban/`
 /// * `None` — если директория не найдена
 pub fn find_kanban_root() -> Option<PathBuf> {
     let current_dir = std::env::current_dir().ok()?;
@@ -66,7 +66,7 @@ pub fn list_stages(kanban_root: &Path) -> Vec<Stage> {
 /// Сканирует все стадии и возвращает список всех задач
 ///
 /// # Аргументы
-/// * `kanban_root` — путь к `.agent/kanban/`
+/// * `kanban_root` — путь к `forge-src/kanban/`
 ///
 /// # Возвращает
 /// Вектор всех найденных задач
@@ -160,7 +160,7 @@ fn load_task_from_folder(dir_path: &Path, stage: Stage) -> Option<Task> {
 /// Находит задачу по ID во всех стадиях
 ///
 /// # Аргументы
-/// * `kanban_root` — путь к `.agent/kanban/`
+/// * `kanban_root` — путь к `forge-src/kanban/`
 /// * `id` — ID задачи (например, "001")
 ///
 /// # Возвращает
@@ -177,7 +177,7 @@ pub fn find_task_by_id(kanban_root: &Path, id: &str) -> Option<Task> {
 /// ID имеет формат трёхзначного числа: "001", "002", ..., "999"
 ///
 /// # Аргументы
-/// * `kanban_root` — путь к `.agent/kanban/`
+/// * `kanban_root` — путь к `forge-src/kanban/`
 ///
 /// # Возвращает
 /// Строку с следующим доступным ID (например, "006")
@@ -195,7 +195,7 @@ pub fn next_available_id(kanban_root: &Path) -> String {
 /// Создаёт файл задачи в указанной стадии
 ///
 /// # Аргументы
-/// * `kanban_root` — путь к `.agent/kanban/`
+/// * `kanban_root` — путь к `forge-src/kanban/`
 /// * `stage` — стадия для создания задачи
 /// * `frontmatter` — метаданные задачи
 /// * `slug` — slug из названия задачи
@@ -262,7 +262,7 @@ pub fn set_completed_at(task: &Task) -> anyhow::Result<()> {
 /// # Аргументы
 /// * `task` — задача для перемещения
 /// * `target_stage` — целевая стадия
-/// * `kanban_root` — путь к `.agent/kanban/`
+/// * `kanban_root` — путь к `forge-src/kanban/`
 ///
 /// # Возвращает
 /// Новый путь к задаче
