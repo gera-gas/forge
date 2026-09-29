@@ -1,85 +1,64 @@
-# Forge
+Вот краткий README (~50 строк) — написан так, чтобы его понимали и англоязычный скринер, и ИИ-агенты (которые и есть целевая аудитория проекта):
 
-CLI-утилита для управления спецификациями ИИ-агентов в проектах разработки.
+```markdown
+# forge
 
-## Описание
+**A Rust CLI that turns a Git repository into structured, validated context
+for AI coding agents.**
 
-**Forge** стандартизирует взаимодействие между разработчиками и ИИ через файловую систему. Утилита создаёт и поддерживает структуру `forge-src/` — единое место для хранения спецификации проекта (концепция, архитектура, задачи, дизайн), понятного ИИ-агентам (Claude Code, Cline, Aider и др.).
+AI coding agents fail on context, not on code. `forge` keeps the specification
+layer of a project — tasks, decisions, guardrails — as plain Markdown, with
+Git as the single source of truth. Humans and agents (Cline, Claude Code)
+work with the same files; history, review, and rollback come from Git for free.
 
-## Возможности
+## Principles
 
-- 🚀 **`forge init`** — создание структуры `forge-src/` с шаблонами документации
-- 🔍 **`forge wrap`** — анализ существующего проекта и генерация описания через LLM
-- 📋 **`forge task`** — управление задачами (Kanban: backlog/sketch/design/todo/in_progress/done)
-- 🤖 **`forge ask`** — NLP-интерфейс для команд на естественном языке
-- 🔧 **`forge template`** — генерация файлов сборки (CMake, Bazel) через LLM
+- **Git is the source of truth.** A task's status is its folder. Moving a task
+  is a rename, recorded in history. No `status` / `uuid` / `created` fields
+  that can drift out of sync.
+- **One ID per fact.** Through-numbered IDs, issued once, greppable across
+  the whole history (`task(001): ...`).
+- **Spec first, code second.** `forge` manages specifications; code generation
+  stays with the external agent (ADR-001).
+- **Deterministic checks, no LLM in the loop.** Validation and hygiene rules
+  run locally, in plain Rust.
 
-## Установка
-
-```bash
-cargo install forge-agent
-```
-
-Или из исходников:
-
-```bash
-git clone https://github.com/yourusername/forge.git
-cd forge
-cargo build --release
-```
-
-## Быстрый старт
+## Install
 
 ```bash
-# Инициализировать forge-src/ в текущем проекте
-forge init
-
-# Проанализировать существующий проект
-forge wrap --source ./src
-
-# Добавить задачу
-forge task new "Реализовать аутентификацию"
-
-# Список задач
-forge task list
+cargo install --git https://github.com/gera-gas/forge
 ```
 
-## Структура `forge-src/`
+## Usage
+
+```bash
+forge init                        # scaffold forge-src/ + AGENTS.md in a repo
+forge task new "Kanban board"     # create a task, assign the next free ID
+forge task move 001 4_in_progress
+forge task list --format json     # machine-readable output for agents
+```
+
+## Layout
 
 ```
 forge-src/
-├── README.md          # Точка входа для агентов
-├── concept.md         # Концепция и цели проекта
-├── tech_stack.md      # Технологический стек
-├── rules.md           # Стандарты кодирования (для человека)
-├── codegen.md         # Правила генерации кода (для ИИ-агента)
-├── struct.md          # Модульная структура
-├── arch.md            # Архитектурные решения (ADR)
-├── kanban/            # Kanban-доска задач
-│   ├── 0_backlog/     # Отложенные
-│   ├── 1_sketch/      # Идеи, наброски
-│   ├── 2_design/      # Утверждённый дизайн
-│   ├── 3_todo/        # Готовы к работе
-│   ├── 4_in_progress/ # В работе
-│   └── 5_done/        # Завершены
-└── workflows/         # Процессы (agent, git)
+├── 3_todo/            # status = folder
+├── 4_in_progress/
+├── 5_done/
+├── arch.md            # ADRs, append-only
+└── workflows/         # agent guardrails: git.md, agent.md
+AGENTS.md              # entry point for coding agents → forge-src/README.md
 ```
 
-## Документация
+## Roadmap
 
-Подробная документация находится в [`forge-src/README.md`](forge-src/README.md).
+- [ ] Auto-commits on task mutations (`task(001): move 001 -> 4_in_progress`)
+- [ ] `forge task show` — task biography from Git history
+- [ ] `forge status` / `forge log` — board summary and event stream
+- [ ] `forge validate` — frontmatter schema, broken references
+- [ ] `forge san` — hygiene: stale tasks, WIP limits, duplicate titles, context budget
 
-## Статус проекта
+## Status
 
-**Phase 0: Bootstrapping** — ✅ Завершена  
-**Phase 1: MVP (forge init)** — 🚧 В разработке  
-
-См. план в [`forge-src/kanban/`](forge-src/kanban/).
-
-## Лицензия
-
-MIT License
-
-## Вклад
-
-Приветствуются pull requests! См. [`forge-src/workflows/git.md`](forge-src/workflows/git.md) для процесса.
+Work in progress, actively used on real projects. Feedback welcome — open an issue.
+```
