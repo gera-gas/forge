@@ -1,6 +1,3 @@
-Вот краткий README (~50 строк) — написан так, чтобы его понимали и англоязычный скринер, и ИИ-агенты (которые и есть целевая аудитория проекта):
-
-```markdown
 # forge
 
 **A Rust CLI that turns a Git repository into structured, validated context
@@ -61,4 +58,3 @@ AGENTS.md              # entry point for coding agents → forge-src/README.md
 ## Status
 
 Work in progress, actively used on real projects. Feedback welcome — open an issue.
-```
